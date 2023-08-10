@@ -135,7 +135,7 @@ while True:
 
     k += 1
     print(f'° iter {k}')
-    print('\tweights\t', np.round(x, 3)*100)
+    print('\tweights\t\t\t\t', np.round(x, 3)*100)
     print('\trisk contributions\t', np.round((x * (cov @ x)) / (x.T@cov@x), 3)*100)
 
 # x = y
