@@ -120,9 +120,14 @@ def _prox_l1_penalty(v: np.ndarray,
     return pyprox.L1(sigma=sigma, g=g).prox(v, phi)
 
 
-def _prox_simplex(v: np.ndarray,
-                  budget: float = 1.0) -> np.ndarray:
-    return pyprox.Simplex(len(v), radius=budget, engine='numba').prox(v, 1.0)
+def _prox_hyperplane(v: np.ndarray,
+                     a: np.ndarray, b: float) -> np.ndarray:
+    return v - (np.dot(a, v) - b) / np.linalg.norm(a, 2)**2 * a
+
+
+# def _prox_simplex(v: np.ndarray,
+#                   budget: float = 1.0) -> np.ndarray:
+#     return pyprox.Simplex(len(v), radius=budget, engine='numba').prox(v, 1.0)
 
 
 def _prox_box(v: np.ndarray,
@@ -154,7 +159,7 @@ def prox_fy(y: np.ndarray,
             phi: float = 1.0,
             tol: float = 1e-7, max_iter: int = 200) -> np.ndarray:
     const_default = {
-        'Budget & Long only': True,
+        'Budget': True,
         'Weight bounds': {
             'Lower': np.full(len(y), -np.inf),
             'Upper': np.full(len(y), np.inf),
@@ -198,8 +203,8 @@ def prox_fy(y: np.ndarray,
     _prox_dict = {
         'L1 Penalty': [lambda v: _prox_l1_penalty(v, penalty_current_l1, current_pf, phi),
                        lambda v: _prox_l1_penalty(v, penalty_refer_l1, reference_pf, phi)],
-        'Budget & Long only': [lambda v: _prox_simplex(v)],
-        # 'Weight bounds': [lambda v: _prox_box(v, const['Weight bounds']['Lower'], const['Weight bounds']['Upper'])],
+        'Budget': [lambda v: _prox_hyperplane(v, np.ones_like(v), 1.0)],
+        'Weight bounds': [lambda v: _prox_box(v, const['Weight bounds']['Lower'], const['Weight bounds']['Upper'])],
         # 'Industry limit': [lambda v: _prox_halfspace(v, )]
         'test1': [lambda v: _prox_halfspace(v, np.array([0.,0.,0.,0.,0.,0.,1.,1.,1.,1.,1.,1.]), 0.3)],
         # 'test2': [lambda v: _prox_halfspace(v, -1*np.array([1.,1.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.]), -0.1)],
