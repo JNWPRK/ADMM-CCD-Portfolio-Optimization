@@ -120,11 +120,6 @@ def _prox_l1_penalty(v: np.ndarray,
     return pyprox.L1(sigma=sigma, g=g).prox(v, phi)
 
 
-def _prox_hyperplane(v: np.ndarray,
-                     a: np.ndarray, b: float) -> np.ndarray:
-    return v - (np.dot(a, v) - b) / np.linalg.norm(a, 2)**2 * a
-
-
 # def _prox_simplex(v: np.ndarray,
 #                   budget: float = 1.0) -> np.ndarray:
 #     return pyprox.Simplex(len(v), radius=budget, engine='numba').prox(v, 1.0)
@@ -134,6 +129,12 @@ def _prox_box(v: np.ndarray,
               lower: float | np.ndarray = -np.inf, upper: float | np.ndarray = np.inf,
               phi: float = 1.0) -> np.ndarray:
     return pyprox.Box(lower=lower, upper=upper).prox(v, phi)
+
+
+@njit
+def _prox_hyperplane(v: np.ndarray,
+                     a: np.ndarray, b: float) -> np.ndarray:
+    return v - (np.dot(a, v) - b) / np.linalg.norm(a, 2)**2 * a
 
 
 @njit
