@@ -87,7 +87,6 @@ def prox_fx(x: np.ndarray,
                param_rb, rb,
                phi, tol, max_iter)
 
-    # normalizing required
     return x
 
 
@@ -107,7 +106,7 @@ def _dykstra(v: np.ndarray,
             z_list[i + 1] = v_list[i] + zold_list[i + 1] - v_list[i + 1]
 
         if np.sum((v_list[-1] - vold_list[0]) ** 2) <= tol or k >= max_iter:
-            print('\tDykstra: iter exceeds max_iter') if k >= max_iter else print(f'\tDykstra: converged after {k} iterations.')
+            print('\tDykstra: Iter exceeds max_iter. The solution may be incorrect.') if k >= max_iter else print(f'\tDykstra: Converged after {k} iterations.')
             break
 
         k += 1
@@ -123,7 +122,7 @@ def _prox_l1_penalty(v: np.ndarray,
 
 def _prox_simplex(v: np.ndarray,
                   budget: float = 1.0) -> np.ndarray:
-    return pyprox.Simplex(len(y), radius=budget, engine='numba').prox(v, 1.0)
+    return pyprox.Simplex(len(v), radius=budget, engine='numba').prox(v, 1.0)
 
 
 def _prox_box(v: np.ndarray,
@@ -200,10 +199,10 @@ def prox_fy(y: np.ndarray,
         'L1 Penalty': [lambda v: _prox_l1_penalty(v, penalty_current_l1, current_pf, phi),
                        lambda v: _prox_l1_penalty(v, penalty_refer_l1, reference_pf, phi)],
         'Budget & Long only': [lambda v: _prox_simplex(v)],
-        'Weight bounds': [lambda v: _prox_box(v, const['Weight Bounds']['Lower'], const['Weight Bounds']['Upper'])],
+        # 'Weight bounds': [lambda v: _prox_box(v, const['Weight bounds']['Lower'], const['Weight bounds']['Upper'])],
         # 'Industry limit': [lambda v: _prox_halfspace(v, )]
-        # lambda v: _prox_halfspace(v, -1*np.array([0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.]), -0.5, True),
-        # lambda v: _prox_halfspace(v, -1*np.array([1.,1.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.]), -0.3, True),
+        'test1': [lambda v: _prox_halfspace(v, np.array([0.,0.,0.,0.,0.,0.,1.,1.,1.,1.,1.,1.]), 0.3)],
+        # 'test2': [lambda v: _prox_halfspace(v, -1*np.array([1.,1.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.]), -0.1)],
     }
     _prox = sum(_prox_dict.values(), start=[])
     y = _dykstra(y, _prox, tol, max_iter)
@@ -249,8 +248,8 @@ def main():
             'rb': np.array([1., 1., 2., 2., 3., 3., 4., 4., 5., 5., 6., 6.])
         }
     }
-    tol = 1e-7
-    max_iter = 200
+    tol = 1e-8
+    max_iter = 1000
     while True:
         xold = x.copy()
         yold = y.copy()
@@ -279,14 +278,17 @@ def main():
         if max(sum((xold - x) ** 2),
                sum((yold - y) ** 2),
                sum((x - y) ** 2)) <= tol or k >= max_iter:
-            print('ADMM: iter exceeds max_iter') if k >= max_iter else print(f'ADMM: converged after {k} iterations.')
+            print('ADMM: Iter exceeds max_iter. The solution may be incorrect.') if k >= max_iter else print(f'ADMM: Converged after {k} iterations.')
             break
+
 
         k += 1
         print(f'° iter {k}')
-        print('\tweights\t\t\t\t', np.round(x, 3) * 100)
-        print('\trisk contributions\t', np.round((x * (cov @ x)) / (x.T @ cov @ x), 3) * 100)
+        print('\tweights\t\t\t\t', np.round(x, 4) * 100)
+        print('\trisk contributions\t', np.round((x * (cov @ x)) / (x.T @ cov @ x), 4) * 100)
 
+    # x /= np.sum(x)
+    print(f'{model} Portfolio')
     print(sum(x))
 
 
