@@ -80,12 +80,12 @@ def prox_fx(x: np.ndarray,
     rb = np.ones_like(x) if rb is None else rb
 
     x = _ccd_fx(x,
-               er, cov,
-               risk_aversion, eta,
-               benchmark_pf, current_pf, reference_pf,
-               penalty_current_l2, penalty_refer_l2,
-               param_rb, rb,
-               phi, tol, max_iter)
+                er, cov,
+                risk_aversion, eta,
+                benchmark_pf, current_pf, reference_pf,
+                penalty_current_l2, penalty_refer_l2,
+                param_rb, rb,
+                phi, tol, max_iter)
 
     return x
 
@@ -143,12 +143,16 @@ def _prox_halfspace(v: np.ndarray,
     return v - (np.maximum(np.dot(c, v) - d, 0) / np.linalg.norm(c, 2)**2) * c
 
 
-def _prox_l1_ball():
-    pass
+def _prox_l1_ball(v: np.ndarray,
+                  radius: float,
+                  phi: float = 1.0) -> np.ndarray:
+    return pyprox.L1Ball(len(v), radius).prox(v, phi)
 
 
-def _prox_l2_ball():
-    pass
+def _prox_l2_ball(v: np.ndarray,
+                  radius: float = 1.0,
+                  phi: float = 1.0) -> np.ndarray:
+    return v - pyprox.L2(sigma=2*radius).prox(v, phi)
 
 
 def prox_fy(y: np.ndarray,
@@ -207,7 +211,7 @@ def prox_fy(y: np.ndarray,
         'Budget': [lambda v: _prox_hyperplane(v, np.ones_like(v), 1.0)],
         'Weight bounds': [lambda v: _prox_box(v, const['Weight bounds']['Lower'], const['Weight bounds']['Upper'])],
         # 'Industry limit': [lambda v: _prox_halfspace(v, )]
-        'test1': [lambda v: _prox_halfspace(v, np.array([0.,0.,0.,0.,0.,0.,1.,1.,1.,1.,1.,1.]), 0.3)],
+        # 'test1': [lambda v: _prox_halfspace(v, np.array([0.,0.,0.,0.,0.,0.,1.,1.,1.,1.,1.,1.]), 0.3)],
         # 'test2': [lambda v: _prox_halfspace(v, -1*np.array([1.,1.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.]), -0.1)],
     }
     _prox = sum(_prox_dict.values(), start=[])
