@@ -125,11 +125,26 @@ def _prox_l2_ball():
     pass
 
 
-def _dykstra():
-    pass
+def _dykstra(v: np.ndarray, func_list: list | tuple):
+    k = 0
+    v_list = np.zeros(
+        shape=[len(func_list) + 1, len(v)])  # +1 is for v_0 and z_0 (but z_0 is redundant, just for consistency)
+    z_list = np.zeros(shape=[len(func_list) + 1, len(v)])  # z_list[0] not used.
+    v_list[-1] = v
+    while True:
+        vold_list = v_list.copy()
+        zold_list = z_list.copy()
+        v_list[0] = vold_list[-1]  # v_0 <- vold_m
+        for i in range(len(v_list) - 1):  # i: 0 ~ m-1
+            v_list[i + 1] = func_list[i](v_list[i] + zold_list[i + 1])
+            z_list[i + 1] = v_list[i] + zold_list[i + 1] - v_list[i + 1]
 
+        if np.sum((v_list[-1] - vold_list[0]) ** 2) <= tol or k >= max_iter:
+            break
 
+        k += 1
 
+    return v_list[-1]
 
 
 def prox_fy(v: np.ndarray,
@@ -171,25 +186,9 @@ def prox_fy(v: np.ndarray,
                    if const['Weight Bounds'] is not None else _prox_box(x, False)),
     ]
 
-    k = 0
-    v_list = np.zeros(shape=[len(_prox)+1, len(v)])   # +1 is for v_0 and z_0 (but z_0 is redundant, just for consistency)
-    z_list = np.zeros(shape=[len(_prox)+1, len(v)])   # z_list[0] not used.
-    v_list[-1] = v
-    while True:
-        # Dykstra's algorithm
-        vold_list = v_list.copy()
-        zold_list = z_list.copy()
-        v_list[0] = vold_list[-1]   # v_0 <- vold_m
-        for i in range(len(v_list)-1):  # i: 0 ~ m-1
-            v_list[i+1] = _prox[i](v_list[i] + zold_list[i+1])
-            z_list[i+1] = v_list[i] + zold_list[i+1] - v_list[i+1]
+    v = _dykstra(v, _prox)
 
-        if np.sum((v_list[-1] - vold_list[0]) ** 2) <= tol or k >= max_iter:
-            break
-
-        k += 1
-
-    return v_list[-1]
+    return v
 
 
 
