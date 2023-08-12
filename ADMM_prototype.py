@@ -156,46 +156,55 @@ def _prox_l2_ball(v: np.ndarray,
 
 
 def prox_fy(y: np.ndarray,
+            cov: np.ndarray | None = None,
             current_pf: np.ndarray | None = None,
+            benchmark_pf: np.ndarray | None = None,
             reference_pf: np.ndarray | None = None,
             penalty_current_l1: float = 0.0,
             penalty_refer_l1: float = 0.0,
             const: dict | None = None,
             phi: float = 1.0,
             tol: float = 1e-7, max_iter: int = 200) -> np.ndarray:
+    cov = np.identity(len(y)) if cov is None else cov
+    benchmark_pf = np.zeros_like(y) if benchmark_pf is None else benchmark_pf
+    current_pf = np.zeros_like(y) if current_pf is None else current_pf
+    reference_pf = np.zeros_like(y) if reference_pf is None else reference_pf
     const_default = {
-        'Budget': True,
+        'Budget': 1.0,
         'Weight bounds': {
-            'Lower': np.full(len(y), -np.inf),
-            'Upper': np.full(len(y), np.inf),
+            'Lower': -np.inf,
+            'Upper': np.inf,
         },
         'Industry limit': {
             'Industry': [],
-            'Lower': np.full(len(y), -np.inf),
-            'Upper': np.full(len(y), np.inf),
+            'Lower': [],
+            'Upper': [],
         },
         'Group limit': {
             'Group': [],
-            'Lower': np.full(len(y), -np.inf),
-            'Upper': np.full(len(y), np.inf),
+            'Lower': [],
+            'Upper': [],
         },
         'Sector limit': {
             'Sector': [],
-            'Lower': np.full(len(y), -np.inf),
-            'Upper': np.full(len(y), np.inf),
+            'Lower': [],
+            'Upper': [],
         },
         'Country limit': {
             'Country': [],
-            'Lower': np.full(len(y), -np.inf),
-            'Upper': np.full(len(y), np.inf),
+            'Lower': [],
+            'Upper': [],
         },
-    #     'Turnover limit': None,
-    #     'Transaction costs limit': None,
-    #     'Leverage limit': None,
-    #     'Long/short exposure': None,
-    #     'Benchmarking': None,
-    #     'Tracking error floor': None,
-    #     'Active share floor': None,
+        'Turnover limit': 1.0,
+        # 'Transaction costs limit': None,
+        'Leverage limit': 1.0,
+        'Long/short exposure': {
+            'Long': 1.0,
+            'Short': -1.0
+        },
+        'Benchmarking': 1.0,
+        'Tracking error floor': 0.0,
+        'Active share floor': 0.0,
     #     'Num of active bets': None
     }
 
@@ -208,12 +217,25 @@ def prox_fy(y: np.ndarray,
     _prox_dict = {
         'L1 Penalty': [lambda v: _prox_l1_penalty(v, penalty_current_l1, current_pf, phi),
                        lambda v: _prox_l1_penalty(v, penalty_refer_l1, reference_pf, phi)],
-        'Budget': [lambda v: _prox_hyperplane(v, np.ones_like(v), 1.0)],
+        'Budget': [lambda v: _prox_hyperplane(v, np.ones_like(v), const['Budget'])],
         'Weight bounds': [lambda v: _prox_box(v, const['Weight bounds']['Lower'], const['Weight bounds']['Upper'])],
-        # 'Industry limit': [lambda v: _prox_halfspace(v, )]
-        # 'test1': [lambda v: _prox_halfspace(v, np.array([0.,0.,0.,0.,0.,0.,1.,1.,1.,1.,1.,1.]), 0.3)],
-        # 'test2': [lambda v: _prox_halfspace(v, -1*np.array([1.,1.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.]), -0.1)],
+        'Industry limit': [],
+        'Group limit': [],
+        'Sector limit': [],
+        # 임시용
+        'Country limit': [lambda v: _prox_halfspace(v, -1*np.array([0.,0.,0.,0.,0.,0.,1.,1.,1.,1.,1.,1.]), -1*const['Country limit']['Lower'][0]),
+                          lambda v: _prox_halfspace(v, np.array([0.,0.,0.,0.,0.,0.,1.,1.,1.,1.,1.,1.]), const['Country limit']['Upper'][0])],
+        'Turnover limit': [lambda v: _prox_l1_ball(v - current_pf, const['Turnover limit'])],
+        'Leverage limit': [lambda v: _prox_l1_ball(v, const['Leverage limit'])],
+        'Long/short exposure': [lambda v: _prox_halfspace(v, np.ones_like(v), const['Long/short exposure']['Long']),
+                                lambda v: _prox_halfspace(v, np.ones_like(v), const['Long/short exposure']['Short'])],
+        'Benchmarking': [lambda v: _prox_l2_ball(np.linalg.cholesky(cov).T@(v-benchmark_pf), const['Benchmarking'])],
+        'Tracking error floor': [lambda v: _prox_l2_ball(-1*np.linalg.cholesky(cov).T@(v-benchmark_pf), -1*const['Tracking error floor'])],
+        'Active share floor': [lambda v: _prox_l1_ball(-0.5*(v - benchmark_pf), -1*const['Active share floor'])],
     }
+    for key in const:
+        if const[key] is None:
+            _prox_dict[key] = []
     _prox = sum(_prox_dict.values(), start=[])
     y = _dykstra(y, _prox, tol, max_iter)
     return y
@@ -258,17 +280,38 @@ def main():
             'rb': np.array([1., 1., 2., 2., 3., 3., 4., 4., 5., 5., 6., 6.])
         }
     }
+    constraints = {
+        'Budget': 1.0,
+        'Weight bounds': {
+            'Lower': 0.0,
+            'Upper': 1.0,
+        },
+        'Industry limit': None,
+        'Group limit': None,
+        'Sector limit': None,
+        'Country limit': {
+            'Lower': [0.0],
+            'Upper': [0.2],
+        },
+        'Turnover limit': None,
+        # 'Transaction costs limit': None,
+        'Leverage limit': None,
+        'Long/short exposure': None,
+        'Benchmarking': None,
+        'Tracking error floor': None,
+        'Active share floor': None,
+        #     'Num of active bets': None
+    }
     tol = 1e-8
     max_iter = 1000
     while True:
         xold = x.copy()
         yold = y.copy()
-        uold = u.copy()
 
         # ADMM
         model = 'ERC'
         x = prox_fx(x=y - u, er=er, cov=cov, phi=phi, **params_model[model]['fx'])
-        y = prox_fy(x + u, phi=phi, **params_model[model]['fy'])
+        y = prox_fy(x + u, phi=phi, **params_model[model]['fy'], const=constraints)
         u += x - y
 
         # ADMM param update (paper p.56)
