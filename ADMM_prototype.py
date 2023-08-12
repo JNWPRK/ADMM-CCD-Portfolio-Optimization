@@ -336,9 +336,11 @@ def main():
 
 
         k += 1
-        print(f'° iter {k}')
-        print('\tweights\t\t\t\t', np.round(x, 4) * 100)
-        print('\trisk contributions\t', np.round((x * (cov @ x)) / (x.T @ cov @ x), 4) * 100)
+        verbose_cycle = 5
+        if k % verbose_cycle == 0:
+            print(f'° iter {k}')
+            print('\tweights\t\t\t\t', np.round(x, 4) * 100)
+            print('\trisk contributions\t', np.round((x * (cov @ x)) / (x.T @ cov @ x), 4) * 100)
 
     # x /= np.sum(x)
     print(f'{model} Portfolio')
