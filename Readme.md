@@ -16,9 +16,9 @@
 
 ![image](https://github.com/NeurofusionAI/quant-intern/assets/87808232/fc55bb16-299e-40bf-8216-5f908fcdb329)
 
-First, split $f_{Robo}(x)$ into $f_{MVO}(x)$, $f_{\ell_1}(x)$, $f_{\ell_2}(x)$, $f_{RB}(x)$ and $\textbf{1}_{\Omega_0}(x)$, $\textbf{1}_{\Omega}(x)$.
+First, split $f_{Robo}(x)$ into $f_{MVO}(x)$, $f_{\ell_1}(x)$, $f_{\ell_2}(x)$, $f_{RB}(x)$ and $\textbf{1}\_{\Omega_0(x)}$, $\textbf{1}_{\Omega(x)}$.
 
-$\textbf{1}_{\Omega}(x)$ is an indicator function, meaning that $\textbf{1}_{\Omega}(x)=0$ for $x \in \Omega$ and $\textbf{1}_{\Omega}(x) = +\infin$ for $x \notin \Omega$. 
+$\textbf{1}\_{\Omega}(x)$ is an indicator function, meaning that $\textbf{1}\_{\Omega}(x)=0$ for $x \in \Omega$ and $\textbf{1}_{\Omega}(x) = +\infty$ for $x \notin \Omega$. 
 
 Then, set $f_x(x)$ and $f_y(y)$ by arranging those functions above, and impose a constraint of $x=y$ which guarantees $x$ and $y$ converge to the same value.
 
@@ -37,7 +37,7 @@ $$
 By using the proximal operators of $f_x(x)$ and $f_y(y)$, we can express each step on the ADMM algorithm.
 
 $$
-{x^{k+1}=\text{prox}_{\varphi f_x} (y^k - u^k)} \\ {y^{k+1}=\text{prox}_{\varphi f_y} (x^{k+1} + u^k)} \\ {u^{k+1} = u^k + x^{k+1} - y^{k+1}}
+{x^{k+1}=\text{prox}\_{\varphi f_x} (y^k - u^k)} \\ {y^{k+1}=\text{prox}_{\varphi f_y} (x^{k+1} + u^k)} \\ {u^{k+1} = u^k + x^{k+1} - y^{k+1}}
 $$
 
 Iterate these steps until $x$ and $y$ converge. 
@@ -72,7 +72,7 @@ We can express all the constraints belonging to the set $\Omega$ to one of these
 - L2 ($\|x\|_2 ^2$)
 - L2 ball ($\|x\|_2 ^2 \le r$)
 
-All these forms have the analytical form the of proximal operator. 
+All these forms have the analytical form of the proximal operator. 
 
 (or in the Python package, PyProximal [https://pyproximal.readthedocs.io/en/stable/index.html](https://pyproximal.readthedocs.io/en/stable/index.html))
 
