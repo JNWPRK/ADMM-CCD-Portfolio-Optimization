@@ -2,6 +2,7 @@ import numpy as np
 import pyproximal as pyprox
 import pylops
 from numba import njit
+from scipy.optimize import bisect
 
 
 @njit
@@ -34,7 +35,7 @@ def _ccd_fx(x: np.ndarray,
             if np.sum(np.abs(x - xold)) < tol or k >= max_iter:
                 break
         # normalizing required in RB
-        x /= np.sum(x)
+        # x = x / np.sum(x) if normalize else x
 
     else:
         x = np.linalg.solve(Q, R)
@@ -82,7 +83,8 @@ def prox_fx(x: np.ndarray,
 
 def _dykstra(v: np.ndarray,
              func_list: list | tuple,
-             tol=1e-7, max_iter=200) -> np.ndarray:
+             tol=1e-7, max_iter=200,
+             verbose=False) -> np.ndarray:
     k = 0
     v_list = np.zeros(shape=[len(func_list) + 1, len(v)])  # +1 is for v_0 and z_0 (but z_0 is redundant, just for consistency)
     z_list = np.zeros(shape=[len(func_list) + 1, len(v)])  # z_list[0] not used.
@@ -96,7 +98,8 @@ def _dykstra(v: np.ndarray,
             z_list[i + 1] = v_list[i] + zold_list[i + 1] - v_list[i + 1]
 
         if np.sum((v_list[-1] - vold_list[-1]) ** 2) <= tol or k >= max_iter:
-            print('\tDykstra: Iter exceeds max_iter. The solution may be incorrect.') if k >= max_iter else print(f'\tDykstra: Converged after {k} iterations.')
+            if verbose:
+                print('\tDykstra: Iter exceeds max_iter. The solution may be incorrect.') if k >= max_iter else print(f'\tDykstra: Converged after {k} iterations.')
             break
 
         k += 1
@@ -110,9 +113,9 @@ def _prox_l1_penalty(v: np.ndarray,
     return pyprox.L1(sigma=sigma, g=g).prox(v, phi)
 
 
-# def _prox_simplex(v: np.ndarray,
-#                   budget: float = 1.0) -> np.ndarray:
-#     return pyprox.Simplex(len(v), radius=budget, engine='numba').prox(v, 1.0)
+def _prox_simplex(v: np.ndarray,
+                  budget: float = 1.0) -> np.ndarray:
+    return pyprox.Simplex(len(v), radius=budget, engine='numba').prox(v, 1.0)
 
 
 def _prox_box(v: np.ndarray,
@@ -154,7 +157,8 @@ def prox_fy(y: np.ndarray,
             penalty_refer_l1: float = 0.0,
             const: dict | None = None,
             phi: float = 1.0,
-            tol: float = 1e-7, max_iter: int = 200) -> np.ndarray:
+            tol: float = 1e-7, max_iter: int = 200,
+            verbose_dykstra=False) -> np.ndarray:
     cov = np.identity(len(y)) if cov is None else cov
     benchmark_pf = np.zeros_like(y) if benchmark_pf is None else benchmark_pf
     current_pf = np.zeros_like(y) if current_pf is None else current_pf
@@ -227,6 +231,86 @@ def prox_fy(y: np.ndarray,
         if const[key] is None:
             _prox_dict[key] = []
     _prox = sum(_prox_dict.values(), start=[])
-    y = _dykstra(y, _prox, tol, max_iter)
+    y = _dykstra(y, _prox, tol, max_iter, verbose_dykstra)
     return y
 
+
+def _admm(er: np.ndarray, cov: np.ndarray,
+          model: str, params_model: dict,
+          constraints: dict,
+          tol: float = 1e-7, max_iter: int = 1e+3,
+          verbose=False,
+          verbose_dykstra=False) -> np.ndarray:
+    k = 0
+    x = np.zeros_like(er)
+    y = np.zeros_like(er)
+    u = np.zeros_like(er)
+    phi = 1.0
+    while True:
+        xold = x.copy()
+        yold = y.copy()
+
+        # ADMM
+        x = prox_fx(x=y - u, er=er, cov=cov, phi=phi, **params_model[model]['fx'])
+        y = prox_fy(x + u, phi=phi, **params_model[model]['fy'], const=constraints,
+                    verbose_dykstra=verbose_dykstra)
+        u += x - y
+
+        # ADMM param update (paper p.56)
+        r = x - y
+        s = phi * (y - yold)
+        mu = 1e+1
+        tau = 2.0
+        error_primal = np.sum(r ** 2)
+        error_dual = np.sum(s ** 2)
+        if error_primal > mu * error_dual:
+            phi *= tau
+            u /= tau
+        elif error_dual > mu * error_primal:
+            phi /= tau
+            u *= tau
+
+        if verbose:
+            verbose_cycle = 5
+            if k % verbose_cycle == 0:
+                print(f'° iter {k}')
+                print('\tweights\t\t\t\t', np.round(x, 4) * 100)
+                print('\trisk contributions\t', np.round((x * (cov @ x)) / (x.T @ cov @ x), 4) * 100)
+
+        if max(sum((xold - x) ** 2),
+               sum((yold - y) ** 2),
+               sum((x - y) ** 2)) <= tol or k >= max_iter:
+            if verbose:
+                print('=' * 100)
+                print('ADMM: Iter exceeds max_iter. The solution may be incorrect.') if k >= max_iter else print(
+                    f'ADMM: Converged after {k} iterations.')
+            break
+        k += 1
+
+    return x
+
+
+def solve(er: np.ndarray, cov: np.ndarray,
+          model: str, params_model: dict,
+          constraints: dict,
+          tol: float = 1e-7, max_iter: int = 1e+3) -> np.ndarray:
+    def _bisect_constraint(lamb):
+        params_model[model]['fx']['param_rb'] = lamb
+        x = _admm(er=er, cov=cov,
+                  model=model, params_model=params_model,
+                  constraints=constraints,
+                  tol=tol, max_iter=max_iter)
+        return np.sum(x) - 1
+
+    if params_model[model]['fx']['param_rb'] > 0.0:
+        constraints['Budget'] = None    # budget constraint must be turned off.
+        lambda_star = bisect(f=_bisect_constraint, a=0, b=20)
+        params_model[model]['fx']['param_rb'] = lambda_star
+
+    x = _admm(er=er, cov=cov,
+              model=model, params_model=params_model,
+              constraints=constraints,
+              verbose=True,
+              verbose_dykstra=True)
+
+    return x
