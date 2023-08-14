@@ -94,7 +94,7 @@ When you optimize RB portfolio, the budget constraint $\textbf{1}^T x = 1$ **mus
 
 (while the long-only condition satisfies automatically thanks to the property of the log-barrier function)
 
-You will find the log-barrier parameter $\lambda^{\star}$ with bisect optimization, which makes the sum of $x$ elements, in the middle of ADMM algorithm.
+You will find the log-barrier parameter $\lambda^{\star}$ with bisect optimization, which makes the sum of $x$ elements to $1$, in the middle of ADMM algorithm.
 
 After finding it, you implement ADMM again using $\lambda^{\star}$.
 
