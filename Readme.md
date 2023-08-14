@@ -16,9 +16,9 @@
 
 ![image](https://github.com/NeurofusionAI/quant-intern/assets/87808232/fc55bb16-299e-40bf-8216-5f908fcdb329)
 
-First, split $f_{Robo}(x)$ into $f_{MVO}(x)$, $f_{\ell_1}(x)$, $f_{\ell_2}(x)$, $f_{RB}(x)$ and $\bm{1}_{\Omega_0}(x)$, $\bm{1}_{\Omega}(x)$.
+First, split $f_{Robo}(x)$ into $f_{MVO}(x)$, $f_{\ell_1}(x)$, $f_{\ell_2}(x)$, $f_{RB}(x)$ and $\textbf{1}_{\Omega_0}(x)$, $\textbf{1}_{\Omega}(x)$.
 
-$\bm{1}_{\Omega}(x)$ is an indicator function, meaning that $\bm{1}_{\Omega}(x)=0$ for $x \in \Omega$ and $\bm{1}_{\Omega}(x) = +\infin$ for $x \notin \Omega$. 
+$\textbf{1}_{\Omega}(x)$ is an indicator function, meaning that $\textbf{1}_{\Omega}(x)=0$ for $x \in \Omega$ and $\textbf{1}_{\Omega}(x) = +\infin$ for $x \notin \Omega$. 
 
 Then, set $f_x(x)$ and $f_y(y)$ by arranging those functions above, and impose a constraint of $x=y$ which guarantees $x$ and $y$ converge to the same value.
 
@@ -63,7 +63,7 @@ It is derived from the Cyclical-Coordinate Descent algorithm.
 
 We can express all the constraints belonging to the set $\Omega$ to one of these forms below.
 
-- Simplex ($\bm{1}^T x = 1$ and $x \ge 0$)
+- Simplex ($\textbf{1}^T x = 1$ and $x \ge 0$)
 - Box ($x^{-} \le x \le x^{+}$)
 - Affine set ($Ax=B$)
 - Halfspace ($c^T x = d$)
@@ -90,7 +90,7 @@ To put it simply, splitting a function or a set to $m$ parts and iterating those
 
 ### ** Points to note for optimizing risk budgeting portfolio
 
-When you optimize RB portfolio, the budget constraint $\bm{1}^T x = 1$ **must not be imposed.**
+When you optimize RB portfolio, the budget constraint $\textbf{1}^T x = 1$ **must not be imposed.**
 
 (while the long-only condition satisfies automatically thanks to the property of the log-barrier function)
 
