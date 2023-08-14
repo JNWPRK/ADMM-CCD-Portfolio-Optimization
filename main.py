@@ -28,8 +28,8 @@ def main():
                 # 'reference_pf': np.ones(12)/12
             },
             'fy': {
-                # 'penalty_refer_l1': 0.0,
-                # 'reference_pf': np.ones(12)/12
+                # 'penalty_refer_l1': 0.03,
+                # 'reference_pf': np.array([2.]*6 + [1.]*6) / 18
             }
         },
         'RB': {
@@ -54,9 +54,9 @@ def main():
         'Group limit': None,
         'Sector limit': None,
         'Country limit':
-        # None,
-            {'Lower': [0.0],
-             'Upper': [0.2]},
+        None,
+        #     {'Lower': [0.0],
+        #      'Upper': [0.2]},
         'Turnover limit': None,
         # 'Transaction costs limit': None,
         'Leverage limit': None,
@@ -78,4 +78,7 @@ def main():
     print('Final risk contributions', np.round((x * (cov @ x)) / (x.T @ cov @ x), 4) * 100)
     print(sum(x))
 
+
 main()
+
+

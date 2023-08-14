@@ -34,8 +34,6 @@ def _ccd_fx(x: np.ndarray,
             k += 1
             if np.sum(np.abs(x - xold)) < tol or k >= max_iter:
                 break
-        # normalizing required in RB
-        # x = x / np.sum(x) if normalize else x
 
     else:
         x = np.linalg.solve(Q, R)
