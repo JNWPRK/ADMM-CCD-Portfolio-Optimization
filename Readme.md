@@ -4,10 +4,11 @@
 
 ## Objective function
 
-$$ x_{t+1}^{\star} = \operatorname{argmin}_x f_{Robo}(x) $$
+$$ x_{t+1}^{\star} = \text{argmin}_x f_{Robo}(x) $$
 $$ \text{s.t.} \begin{cases} \textbf{1}_n x = 1 \\ \textbf0_n \le x \le \textbf{1}_n \\ x \in \Omega \end{cases} $$
 
-where:
+where:  
+
 $$ f_{Robo}(x) = \gamma (x-b)^T \Sigma (x-b) - \eta(x-b)^T\mu + \varrho_1 \|x-x_t\|_1 + {1 \over 2} \varrho_2 \| x-x_t\|_2 ^2 + \tilde{\varrho}_1 \|x-\tilde{x}\|_1 + {1\over 2} \tilde{\varrho}_2 \|x-\tilde{x}\|_2 ^2 - \lambda \sum_{i=1} ^n \mathcal{RB_i}\text{ln} \cdot x_i $$
 
 ## Constraints set ($\Omega$)
@@ -37,19 +38,20 @@ $$ f_{MVO}(x) = \gamma (x-b)^T \Sigma (x-b) - \eta(x-b)^T\mu $$
 $$ f_{\ell_1}(x) =\varrho_1 \|x-x_t\|_1 + \tilde{\varrho}_1 \|x-\tilde{x}\|_1 $$
 $$ f_{\ell_2}(x) = {1 \over 2} \varrho_2 \| x-x_t\|_2 ^2 + {1\over 2} \tilde{\varrho}_2 \|x-\tilde{x}\|_2 ^2 $$
 $$ f_{RB}(x) = - \lambda \sum_{i=1} ^n \mathcal{RB_i}\text{ln} \cdot x_i $$
-$$ \Omega_0 = \{x\in [0,1]^n : \textbf1_n^Tx=1\} $$
+$$ \Omega_0 = \{x\in [0,1]^n : \textbf1_n^Tx=1\} $$  
 
-First, split $f_{Robo}(x)$ into $f_{MVO}(x)$, $f_{\ell_1}(x)$, $f_{\ell_2}(x)$, $f_{RB}(x)$ and $\textbf{1}_{\Omega_0(x)}$, $\textbf{1}_{\Omega(x)}$.
+First, split $f_{Robo}(x)$ into $f_{MVO}(x)$, $f_{\ell_1}(x)$, $f_{\ell_2}(x)$, $f_{RB}(x)$ and $\textbf{1}\_{\Omega_0(x)}$, $\textbf{1}_{\Omega}(x)$.  
 
-$\textbf{1}_{\Omega}(x)$ is an indicator function, meaning that $\textbf{1}_{\Omega}(x)=0$ for $x \in \Omega$ and $\textbf{1}_{\Omega}(x) = +\infty$ for $x \notin \Omega$. 
+$\textbf{1}\_{\Omega}(x)$ is an indicator function, meaning that $\textbf{1}\_{\Omega}(x)=0$ for $x \in \Omega$ and $\textbf{1}_{\Omega}(x) = +\infty$ for $x \notin \Omega$. 
 
 Then, set $f_x(x)$ and $f_y(y)$ by arranging those functions above, and impose a constraint of $x=y$ which guarantees $x$ and $y$ converge to the same value.
 
 $$ f_{x}(x) = f_{MVO}(x) + f_{\ell_2}(x) + f_{RB}(X) $$
 $$ f_{y}(y) = f_{\ell_1}(y) + \textbf1_{\Omega_0}(y) + \textbf1_{\Omega}(y) $$
 
-$f_x(x)$ and $f_y(y)$ are ingredients for the **ADMM algorithm.**
-$$ \{x^\star, y^\star \} = \operatorname{argmin}_{x,y} f_x(x)+f_y(y) $$
+$f_x(x)$ and $f_y(y)$ are ingredients for the **ADMM algorithm.**  
+
+$$ \{x^\star, y^\star \} = \text{argmin}_{x,y} f_x(x)+f_y(y) $$
 $$ \text{s.t.} \quad x=y $$
 
 ### ADMM algorithm
@@ -78,12 +80,11 @@ Now we need to calculate $\text{prox}$ of $f_x(x)$ and $f_y(y)$. We adopt CCD al
 ### $x$-update: CCD algorithm
 
 Perrin et al. (2019) proposed the $x$-update formula.
+
 $$x_i^{(k+1)} = \frac{R_i - \sum_{j<i} x_j^{(k+1)} Q_{i,j} - \sum_{j>i} x_j^{(k)} Q_{i,j}}{2 Q_{i,i}} + \frac{\sqrt{\left(\sum_{j<i} x_j^{(k+1)} Q_{i,j} + \sum_{j>i} x_j^{(k)} Q_{i,j} - R_i\right)^2 + 4 \lambda_i Q_{i,i}}}{2 Q_{i,i}}$$
-$$
-$$
+
 where the matrices $Q$ and $R$ are defined as:
-$$
-$$
+
 $$Q = \mathbf{\Sigma}_t + \varrho_2 \mathbf{\Gamma}_2^\top \mathbf{\Gamma}_2 + \tilde{\varrho}_2 \tilde{\mathbf{\Gamma}}_2^\top \tilde{\mathbf{\Gamma}}_2 + \varphi \mathbf{I}_n$$
 
 $$R = \gamma \boldsymbol{\mu}_t + \mathbf{\Sigma}_t \mathbf{b} + \varrho_2 \mathbf{\Gamma}_2^\top \mathbf{\Gamma}_2 \mathbf{x}_t + \tilde{\varrho}_2 \tilde{\mathbf{\Gamma}}_2^\top \tilde{\mathbf{\Gamma}}_2 \tilde{\mathbf{x}} + \varphi \left(\mathbf{y}^{(k)} - \mathbf{u}^{(k)}\right)$$
@@ -114,15 +115,23 @@ However, there are some proximal operators which do not have analytical form, su
 
 In this case, you can use Dykstra’s algorithm.
 
-The Dykstra's algorithm is particularly efficient when we consider the projection problem:
+The Dykstra's algorithm is particularly efficient when we consider the projection problem:  
+
 $$ x^{\star} = \mathcal{P}_{\Omega}(\mathbf{v})$$ 
-where: 
+
+where:  
+
 $$\Omega = \Omega_1 \cap \Omega_2 \cap \dots \cap \Omega_m$$
+
 Indeed, the Dykstra's algorithm becomes:
-- The ${x}$-update is:
-$${x}^{(k+1, j)} = \operatorname{prox}_{f_j}\left({x}^{(k+1, j-1)} + {z}^{(k, j)}\right) = \mathcal{P}_{\Omega_j}\left({x}^{(k+1, j-1)} + {z}^{(k, j)}\right) $$
-- The ${z}$-update is:
+- The ${x}$-update is:  
+
+$${x}^{(k+1, j)} = \text{prox}_{f_j}\left({x}^{(k+1, j-1)} + {z}^{(k, j)}\right) = \mathcal{P}_{\Omega_j}\left({x}^{(k+1, j-1)} + {z}^{(k, j)}\right) $$
+
+- The ${z}$-update is:  
+
 $${z}^{(k+1, j)} = {x}^{(k+1, j-1)} + {z}^{(k, j)} - {x}^{(k+1, j)}$$
+
 where ${x}^{(1, 0)} = {v}$, ${z}^{(k, j)} = \mathbf{0}_n$ for $k = 0$ and ${x}^{(k+1, 0)} = {x}^{(k, m)}$
 
 
@@ -138,23 +147,25 @@ You will find the log-barrier parameter $\lambda^{\star}$ with bisect optimizati
 
 After finding it, you implement ADMM again using $\lambda^{\star}$.
 
->**Algorithm**: General algorith for computing the constrained RB portfolio
->
->The goal is to compute the optimal Lagrange multiplier $\lambda^{\star}$ and the solution $x^{\star}(\mathcal{S}, \Omega)$
->We consider two scalars $a_{\lambda}$ and $b_{\lambda}$ such that $a_{\lambda} < b_{\lambda}$ and $\lambda^{\star} \in [a_{\lambda}, b_{\lambda}]$
->We note $\varepsilon_{\lambda}$ the convergence criterion of the bisection algorith (e.g. $10^{-8}$)
->
->**repeat**
- >   We calculate $\lambda = \frac{a_\lambda + b_\lambda}{2}$
- >  We compute ${x}^{\star}(\lambda)$ the solution of the minimization problem:
- >       ${x}^{\star}(\lambda) = {\operatorname{argmin}} \mathcal{L}({x}; \lambda)$
- >   if $\sum_{i=1}^n x^{\star}_i(\lambda) < 1$ then
- >       $a_\lambda \leftarrow \lambda$
- >   else
- >       $b_\lambda \leftarrow \lambda$
- >   end if
->**until** $|\sum_{i=1}^n x^{\star}_i(\lambda) - 1| \leq \varepsilon_\lambda$
->return $\lambda^\star \leftarrow \lambda$ and ${x}^\star(\mathcal{S}, \Omega) \leftarrow {x}^\star(\lambda^\star)$
+
+
+#### **Algorithm**: General algorith for computing the constrained RB portfolio  
+The goal is to compute the optimal Lagrange multiplier $\lambda^{\star}$ and the solution $x^{\star}(\mathcal{S}, \Omega)$  
+We consider two scalars $a_{\lambda}$ and $b_{\lambda}$ such that $a_{\lambda} < b_{\lambda}$ and $\lambda^{\star} \in [a_{\lambda}, b_{\lambda}]$  
+We note $\varepsilon_{\lambda}$ the convergence criterion of the bisection algorith (e.g. $10^{-8}$)  
+
+repeat
+-   We calculate $\lambda = \frac{a_\lambda + b_\lambda}{2}$  
+-   We compute ${x}^{\star}(\lambda)$ the solution of the minimization problem:  
+    -   ${x}^{\star}(\lambda) = {\text{argmin}} \mathcal{L}({x}; \lambda)$  
+-    if $\sum_{i=1}^n x^{\star}_i(\lambda) < 1$ then  
+    -   $a_\lambda \leftarrow \lambda$  
+-   else  
+    -   $b_\lambda \leftarrow \lambda$  
+-   end if  
+
+until $|\sum_{i=1}^n x^{\star}_i(\lambda) - 1| \leq \varepsilon_\lambda$  
+return $\lambda^\star \leftarrow \lambda$ and ${x}^\star(\mathcal{S}, \Omega) \leftarrow {x}^\star(\lambda^\star)$
 
 # Reference
 
